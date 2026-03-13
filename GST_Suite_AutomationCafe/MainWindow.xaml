@@ -1,0 +1,29 @@
+﻿<Window x:Class="GST_Suite_AutomationCafe.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="GST Suite - Automation Cafe" Height="450" Width="400"
+        WindowStartupLocation="CenterScreen" Background="#F3F4F6">
+
+    <Grid>
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Width="280">
+            <TextBlock Text="AUTOMATION CAFE" FontSize="24" FontWeight="Bold" Foreground="#1F2937" HorizontalAlignment="Center" Margin="0,0,0,5"/>
+            <TextBlock Text="Commercial RPA Suite" FontSize="14" Foreground="#6B7280" HorizontalAlignment="Center" Margin="0,0,0,30"/>
+
+            <TextBlock Text="Email Address" FontWeight="SemiBold" Foreground="#374151" Margin="0,0,0,5"/>
+            <TextBox x:Name="txtEmail" Height="35" Padding="5,0" Margin="0,0,0,15" VerticalContentAlignment="Center" FontSize="14"/>
+
+            <TextBlock Text="Password" FontWeight="SemiBold" Foreground="#374151" Margin="0,0,0,5"/>
+            <PasswordBox x:Name="txtPassword" Height="35" Padding="5,0" Margin="0,0,0,25" VerticalContentAlignment="Center" FontSize="14"/>
+
+            <Button x:Name="btnLogin" Content="SECURE LOGIN" Height="40" Background="#2563EB" Foreground="White" FontSize="14" FontWeight="Bold" Cursor="Hand" Click="btnLogin_Click">
+                <Button.Resources>
+                    <Style TargetType="Border">
+                        <Setter Property="CornerRadius" Value="4"/>
+                    </Style>
+                </Button.Resources>
+            </Button>
+
+            <TextBlock x:Name="txtStatus" Foreground="#DC2626" HorizontalAlignment="Center" Margin="0,15,0,0" TextWrapping="Wrap" TextAlignment="Center"/>
+        </StackPanel>
+    </Grid>
+</Window>
