@@ -141,7 +141,7 @@ namespace AutomationServer.Api.Controllers
                     #endregion
 
                     #region 3. Fetch Allowed Modules via Subscription
-                    List<int> allowedModules = new List<int>();
+                    var allowedModules = new List<(int Id, string Name)>();
                     using (SqlCommand getModulesCmd = new SqlCommand("sp_GetAllowedModulesForUser", conn))
                     {
                         getModulesCmd.CommandType = CommandType.StoredProcedure;
@@ -151,7 +151,7 @@ namespace AutomationServer.Api.Controllers
                         {
                             while (await reader.ReadAsync())
                             {
-                                allowedModules.Add(reader.GetInt32(0));
+                                allowedModules.Add((reader.GetInt32(0), reader.GetString(1)));
                             }
                         }
                     }
@@ -177,17 +177,19 @@ namespace AutomationServer.Api.Controllers
         #endregion
 
         #region Helper Methods
-        private string GenerateJwtToken(string email, Guid sessionId, List<int> allowedModules)
+        private string GenerateJwtToken(string email, Guid sessionId, List<(int Id, string Name)> allowedModules)
         {
             var jwtSettings = _configuration.GetSection("JwtSettings");
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["SecretKey"]!));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
+            var moduleData = allowedModules.Select(m => new { id = m.Id, name = m.Name }).ToList();
+
             var claims = new List<Claim>
             {
                 new Claim(JwtRegisteredClaimNames.Sub, email),
                 new Claim("session_id", sessionId.ToString()),
-                new Claim("allowed_modules", JsonSerializer.Serialize(allowedModules))
+                new Claim("allowed_modules", JsonSerializer.Serialize(moduleData))
             };
 
             var token = new JwtSecurityToken(
