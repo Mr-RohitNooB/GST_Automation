@@ -9,7 +9,7 @@ namespace GST_Suite_AutomationCafe.Services
         private readonly HttpClient _httpClient;
 
         // Context: Change 7045 to match your API's local port shown in Swagger
-        private const string BaseUrl = "http://52.66.105.234/api/";
+        private const string BaseUrl = "http://15.207.222.81/api/";
 
         public ApiService()
         {

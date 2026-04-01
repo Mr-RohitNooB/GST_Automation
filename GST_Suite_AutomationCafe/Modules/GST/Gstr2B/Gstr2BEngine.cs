@@ -2,6 +2,7 @@ using ClosedXML.Excel;
 using GST_Suite_AutomationCafe.Models;
 using GST_Suite_AutomationCafe.Services;
 using Microsoft.Playwright;
+using System.IO;
 
 namespace GST_Suite_AutomationCafe.Modules.GST.Gstr2B
 {
@@ -161,7 +162,7 @@ namespace GST_Suite_AutomationCafe.Modules.GST.Gstr2B
                             await page.ClickAsync(cfg.Period.SearchSelector);
                             await Task.Delay(4000, ct);
 
-                            var (dlOk, dlMsg) = await DownloadAsync(page, yearFolder, cfg.Download, ct);
+                            (bool dlOk, string dlMsg) = await DownloadAsync(page, yearFolder, cfg.Download, ct);
 
                             if (dlOk)
                             {
