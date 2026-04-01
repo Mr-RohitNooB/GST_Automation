@@ -1,4 +1,5 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+﻿using GST_Suite_AutomationCafe.Modules.GST.Gstr2B;
+using System.IdentityModel.Tokens.Jwt;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
@@ -9,12 +10,7 @@ namespace GST_Suite_AutomationCafe
 {
     public partial class DashboardWindow : Window
     {
-        private readonly Dictionary<int, string> _moduleCatalog = new()
-        {
-            { 1, "GST Portal Downloader" },
-            { 2, "ITR Auto-Filer" },
-            { 3, "LinkedIn Scraper" }
-        };
+        private record ModuleInfo(int Id, string Name);
 
         public DashboardWindow()
         {
@@ -39,11 +35,6 @@ namespace GST_Suite_AutomationCafe
                 var handler = new JwtSecurityTokenHandler();
                 var jwtToken = handler.ReadJwtToken(token);
 
-                // --- DEBUG TOOL: SHOW ME THE CONTENTS OF THE TOKEN ---
-                string allClaims = string.Join("\n", jwtToken.Claims.Select(c => c.Type + " = " + c.Value));
-                MessageBox.Show(allClaims, "What is inside my Token?");
-                // -----------------------------------------------------
-
                 var modulesClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "allowed_modules")?.Value;
 
                 if (string.IsNullOrEmpty(modulesClaim))
@@ -52,21 +43,20 @@ namespace GST_Suite_AutomationCafe
                     return;
                 }
 
-                List<int> allowedModuleIds = JsonSerializer.Deserialize<List<int>>(modulesClaim) ?? new List<int>();
+                var modules = JsonSerializer.Deserialize<List<ModuleInfo>>(modulesClaim,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+                    ?? new List<ModuleInfo>();
 
-                if (allowedModuleIds.Count == 0)
+                if (modules.Count == 0)
                 {
                     AddNoAccessMessage();
                     return;
                 }
 
-                foreach (int moduleId in allowedModuleIds)
+                foreach (var module in modules)
                 {
-                    if (_moduleCatalog.TryGetValue(moduleId, out string? moduleName))
-                    {
-                        Button toolBtn = CreateToolButton(moduleId, moduleName);
-                        ModuleContainer.Children.Add(toolBtn);
-                    }
+                    Button toolBtn = CreateToolButton(module.Id, module.Name);
+                    ModuleContainer.Children.Add(toolBtn);
                 }
             }
             catch (Exception ex)
@@ -90,7 +80,7 @@ namespace GST_Suite_AutomationCafe
                 BorderThickness = new Thickness(0)
             };
 
-            btn.Click += async (s, e) => await TriggerAutomationEngine(moduleId, moduleName);
+            btn.Click += (s, e) => LoadModuleControl(moduleName);
             return btn;
         }
 
@@ -105,40 +95,25 @@ namespace GST_Suite_AutomationCafe
         }
         #endregion
 
-        #region Automation Trigger
-        // Context: This is where the magic happens when you click the GST button!
-        private async Task TriggerAutomationEngine(int moduleId, string moduleName)
+        #region Module Routing
+        private void LoadModuleControl(string moduleName)
         {
-            try
+            var name = moduleName.ToLowerInvariant();
+
+            System.Windows.Controls.UserControl? control = name switch
             {
-                var originalCursor = Cursor;
-                Cursor = Cursors.Wait;
+                var n when n.Contains("2b") || n.Contains("gstr2b") => new Gstr2BControl(),
+                _ => null
+            };
 
-                var apiService = new Services.ApiService();
-                var engine = new Services.AutomationEngine();
-
-                // 1. Get the secure link
-                string cdnUrl = await apiService.GetModuleDownloadUrlAsync(moduleId, MainWindow.CurrentJwtToken);
-
-                // 2. Download the JSON Script
-                string jsonScript = await apiService.DownloadScriptJsonAsync(cdnUrl);
-
-                // 3. Prepare user credentials
-                var userInputs = new Dictionary<string, string>
-                {
-                    { "GST_USERNAME", "Rohit_TaxPro_01" },
-                    { "GST_PASSWORD", "SecurePassword123!" }
-                };
-
-                // 4. Run Playwright
-                await engine.RunScriptAsync(jsonScript, userInputs);
-
-                Cursor = originalCursor;
+            if (control != null)
+            {
+                ModuleContent.Content = control;
             }
-            catch (Exception ex)
+            else
             {
-                Cursor = Cursors.Arrow;
-                MessageBox.Show(ex.Message, "Automation Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Module '{moduleName}' is not yet available in this version.",
+                    "Coming Soon", MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
         #endregion

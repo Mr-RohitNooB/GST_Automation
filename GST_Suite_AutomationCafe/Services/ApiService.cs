@@ -9,7 +9,7 @@ namespace GST_Suite_AutomationCafe.Services
         private readonly HttpClient _httpClient;
 
         // Context: Change 7045 to match your API's local port shown in Swagger
-        private const string BaseUrl = "https://localhost:7045/api/";
+        private const string BaseUrl = "http://52.66.105.234/api/";
 
         public ApiService()
         {
@@ -32,6 +32,21 @@ namespace GST_Suite_AutomationCafe.Services
         }
 
         #region Secure Module Fetching
+        // Fetches the JSON automation config for a module from the DB via API.
+        // When the GST portal changes layout, only the DB record needs updating — no client rebuild.
+        public async Task<string> GetModuleScriptAsync(int moduleId, string token)
+        {
+            _httpClient.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+            var response = await _httpClient.GetAsync($"Modules/script/{moduleId}");
+
+            if (response.IsSuccessStatusCode)
+                return await response.Content.ReadAsStringAsync();
+
+            throw new Exception($"Failed to fetch module script. Status: {response.StatusCode}");
+        }
+
         public async Task<string> GetModuleDownloadUrlAsync(int moduleId, string token)
         {
             _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
@@ -49,20 +64,12 @@ namespace GST_Suite_AutomationCafe.Services
 
         public async Task<string> DownloadScriptJsonAsync(string cdnUrl)
         {
-            await Task.Delay(500);
+            var response = await _httpClient.GetAsync(cdnUrl);
 
-            return """
-            {
-              "moduleName": "GST Downloader",
-              "version": "1.0",
-              "steps": [
-                { "action": "goto", "value": "https://services.gst.gov.in/services/login" },
-                { "action": "type", "selector": "#username", "value": "{GST_USERNAME}" },
-                { "action": "type", "selector": "#user_pass", "value": "{GST_PASSWORD}" },
-                { "action": "wait", "value": "3000" }
-              ]
-            }
-            """;
+            if (response.IsSuccessStatusCode)
+                return await response.Content.ReadAsStringAsync();
+
+            throw new Exception($"Failed to download script from server. Status: {response.StatusCode}");
         }
         #endregion
     }
